@@ -6,7 +6,7 @@ function Home({ addToCart }) {
     <div className="grid grid-cols-3 gap-4 p-4">
       {foodItems.map(item => (
         <div key={item.id} className="border rounded-lg p-5 shadow">
-          <img src={item.image} alt={item.name} className="h-70 w-full object-cover rounded" />
+        <img src={item.image} alt={item.name} className="h-70 w-full object-cover rounded" />
           <h2 className="font-bold">{item.name}</h2>
           <p>Rs. {item.price}</p>
           <button
