@@ -1,20 +1,61 @@
 import { useState } from 'react';
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^9\d{9}$/; // Nepali mobile: starts with 9 + 9 digits
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/; // min 6 chars, letters+digits
+
 export default function Login({ onLogin, onRegister }) {
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
 
-  const submit = () => {
+  const validateRegister = () => {
+    if (!name) return 'Name is required.';
+    if (!emailRegex.test(email)) return 'Invalid email format.';
+    if (!phoneRegex.test(phone)) return 'Invalid Nepali phone number.';
+    if (!passwordRegex.test(password)) return 'Password must be 6+ chars with letters and numbers.';
+    return null;
+  };
+
+  const validateLogin = () => {
+    if (!emailRegex.test(email)) return 'Invalid email format.';
+    if (!password) return 'Password is required.';
+    return null;
+  };
+
+  const submit = async () => {
     if (mode === 'register') {
-      if (!name || !email || !phone) return alert('Fill all fields');
-      onRegister({ name, email, phone });
-      alert('Registration successful!');
+      const err = validateRegister();
+      if (err) return alert(err);
+
+      // Call backend register API
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Registration successful');
+        onRegister(data.user);
+      } else alert(data.message || 'Registration failed');
     } else {
-      if (!email || !phone) return alert('Fill all fields');
-      onLogin({ name: name || 'User', email, phone });
-      alert('Login successful!');
+      const err = validateLogin();
+      if (err) return alert(err);
+
+      // Call backend login API
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Login successful');
+        onLogin(data.user);
+      } else alert(data.message || 'Login failed');
     }
   };
 
@@ -23,11 +64,10 @@ export default function Login({ onLogin, onRegister }) {
       <h2 className="text-2xl font-bold mb-6 text-center">{mode === 'login' ? 'Login' : 'Register'}</h2>
       {mode === 'register' && (
         <input
-          type="text"
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mb-4 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="mb-4 w-full p-2 border rounded focus:ring-2"
         />
       )}
       <input
@@ -35,35 +75,49 @@ export default function Login({ onLogin, onRegister }) {
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="mb-4 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+        className="mb-4 w-full p-2 border rounded focus:ring-2"
       />
+      {mode === 'register' && (
+        <input
+          placeholder="Phone (e.g. 98xxxxxxxx)"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="mb-4 w-full p-2 border rounded focus:ring-2"
+        />
+      )}
       <input
-        type="tel"
-        placeholder="Phone Number"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        className="mb-6 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="mb-6 w-full p-2 border rounded focus:ring-2"
       />
       <button
         onClick={submit}
-        className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded font-semibold transition"
+        className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-4"
       >
         {mode === 'login' ? 'Login' : 'Register'}
       </button>
-      <p className="mt-4 text-center text-gray-600">
+      <p className="text-sm text-center">
         {mode === 'login' ? (
           <>
             Don't have an account?{' '}
-            <button className="text-red-500 underline" onClick={() => setMode('register')}>
-              Register here
-            </button>
+            <span
+              className="text-blue-600 underline cursor-pointer"
+              onClick={() => setMode('register')}
+            >
+              Register
+            </span>
           </>
         ) : (
           <>
-            Already have an account?{' '}
-            <button className="text-red-500 underline" onClick={() => setMode('login')}>
-              Login here
-            </button>
+            Already registered?{' '}
+            <span
+              className="text-blue-600 underline cursor-pointer"
+              onClick={() => setMode('login')}
+            >
+              Login
+            </span>
           </>
         )}
       </p>
